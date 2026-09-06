@@ -15,6 +15,9 @@ This repository-local changelog records source revisions. Canonical GoreeCloud p
 - JSON export v2 with projects, memberships, source relationships, and saved searches.
 - Additive SQLite schema-migration registry; current schema version 2.
 - Development source/project API expansion and health schema-version reporting.
+- Recovery Bundle v1 with SQLite-backup-API snapshotting, strict SHA-256/size/schema/table-count manifest verification, SQLite integrity and foreign-key checks, symlink rejection, and clean-target no-overwrite restore.
+- Automated clean-environment recovery drill covering representative schema-v2 sources, snapshots, claims, projects, memberships, relationships, saved searches, and restored search behavior, plus tamper and overwrite rejection tests.
+- Recovery Bundle v1 operator documentation in `docs/recovery-bundle.md`.
 - Regression tests for projects, relationships, saved searches, migrations, CSL JSON, and RIS.
 
 ### Changed
@@ -23,11 +26,13 @@ This repository-local changelog records source revisions. Canonical GoreeCloud p
 - Source detail now shows project memberships, source relationships, and expanded citation portability.
 - Navigation now exposes research projects and citation-oriented exports.
 - Repository documentation and Platform Contract declaration synchronized to the 0.2 Development boundary.
+- Local continuity evidence now includes an application-owned verified clean-target recovery primitive; this does not promote Everkeep integration status or lifecycle state.
 
 ### Boundaries
 
 - Source relationships remain researcher-authored evidence metadata and are not automatic verification or truth claims.
-- The application remains local/private Development software without GoreeCloud Identity, Wardveil Security, Privacy Shield, Everkeep, GoreeCloud Mesh, GoreeCloud Manager, production, or Stable acceptance.
+- Recovery Bundle v1 integrity metadata is not encryption, a signature, identity evidence, authorization, off-device custody, or Everkeep service acceptance.
+- The application remains local/private Development software without GoreeCloud Identity, Wardveil Security, Privacy Shield, accepted Everkeep orchestration, GoreeCloud Mesh, GoreeCloud Manager, production, or Stable acceptance.
 
 ## 0.1.0-dev — Initial functional MVP
 
