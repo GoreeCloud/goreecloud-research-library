@@ -19,6 +19,26 @@ Remote-source ingestion is the highest-risk current capability. The application 
 
 These controls reduce risk but do not make the MVP production-safe. DNS rebinding, parser vulnerabilities, decompression/parser resource abuse, hostile documents, egress control, authentication, authorization, rate limiting, audit policy, and platform-system acceptance still require additional hardening.
 
+## Recovery bundle security
+
+Recovery Bundle v1 contains a complete SQLite copy of the Research Library state and can therefore expose sensitive research history, project questions, notes, claims, saved searches, and source relationships. Treat a bundle with the same confidentiality requirements as the live database.
+
+Current recovery safeguards include:
+
+- SQLite backup API use instead of an unsafe main-file-only copy of a live WAL database;
+- strict manifest field validation;
+- SHA-256 and exact byte-size verification;
+- SQLite `integrity_check` and `foreign_key_check`;
+- exact schema-v2 durable table-set and row-count verification;
+- rejection of symbolic-link substitution in relevant source, bundle, and target paths;
+- private file modes for generated database and manifest files;
+- clean-target restore only; existing database paths are never overwritten by the recovery command;
+- re-verification before and after same-filesystem no-overwrite publication.
+
+The SHA-256 manifest is integrity metadata, not encryption, a signature, user identity, authorization, or proof of trusted custody. Recovery bundles must be stored in protected locations and must not be committed to the repository or published as CI artifacts containing private research data.
+
+The current recovery implementation is an application-owned Development primitive. It does not establish Everkeep orchestration, encrypted/off-device custody, backup retention/deletion policy, key management, disaster recovery, privileged rollback authorization, or production recovery acceptance.
+
 ## Deployment requirements
 
 Until GoreeCloud Identity and the required platform security/privacy controls are integrated and accepted:
@@ -27,8 +47,8 @@ Until GoreeCloud Identity and the required platform security/privacy controls ar
 - do not expose `/api/v1/capture` to untrusted users;
 - keep `GORECLOUD_RESEARCH_ALLOW_PRIVATE_FETCH=false` unless a controlled private-source workflow explicitly requires otherwise;
 - apply network-level egress restrictions in higher-risk deployments;
-- protect the SQLite database and exports because research context can be sensitive;
-- do not store reusable credentials in source URLs, notes, repository files, or ordinary exports.
+- protect the SQLite database, recovery bundles, and exports because research context can be sensitive;
+- do not store reusable credentials in source URLs, notes, repository files, ordinary exports, or recovery-bundle metadata.
 
 ## Reporting vulnerabilities
 
