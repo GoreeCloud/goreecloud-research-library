@@ -7,7 +7,7 @@
 - Development model: original native GoreeCloud application
 - Lifecycle: Development
 - Current code version: `0.2.0-dev`
-- Current implementation boundary: functional local/private research library with projects and evidence relationships
+- Current implementation boundary: functional local/private research library with projects, evidence relationships, and application-owned schema-v2 recovery bundles
 - Production approval: No
 
 ## 1. Role and purpose
@@ -78,6 +78,18 @@ These preserve citation metadata and improve interoperability. They do not const
 
 The library provides machine-readable export without a proprietary hosted dependency. JSON export v2 includes sources, claims, snapshots, project memberships, source relationships, projects, and saved searches. CSV remains a source-level tabular export. CSL JSON and RIS provide citation-oriented portability.
 
+### 3.9 Application-owned recovery
+
+Recovery Bundle v1 is the current Development recovery primitive for schema version 2. It creates a consistent SQLite backup with SQLite's backup API and emits a strict `goreecloud.research.recovery/1` manifest containing creation time, schema version, fixed database filename, SHA-256, exact byte size, and row counts for every durable schema-v2 table.
+
+Verification requires the exact manifest shape, supported schema version, SQLite `integrity_check`, SQLite `foreign_key_check`, the complete durable table set, byte size, SHA-256, and durable row-count agreement. Relevant symbolic-link path substitution is rejected.
+
+Restore is deliberately clean-target only. The target database must not already exist. The verified source is copied into a private temporary file in the target directory, re-verified, published with a same-filesystem no-overwrite hard link, and verified again after publication. Recovery Bundle v1 does not silently replace or mutate an existing database.
+
+The automated recovery drill creates representative schema-v2 state and verifies a full clean-target round trip for sources, snapshots, claims, projects, project memberships, source relationships, saved searches, schema version, and search behavior. Tampered data/manifest state, existing targets, and symlink target components are required to fail closed.
+
+This capability is application-owned Development evidence. It is not encryption, signature/provenance, authorization, Everkeep orchestration, protected/off-device backup custody, disaster recovery, or production recovery acceptance.
+
 ## 4. Current architecture
 
 - Runtime: Python 3.12+
@@ -88,10 +100,11 @@ The library provides machine-readable export without a proprietary hosted depend
 - PDF parser: pypdf as a bounded supporting dependency
 - Database: SQLite with WAL mode; FTS5 when available
 - Local schema migrations: application-owned migration registry; current schema version 2
+- Recovery: application-owned `app.recovery` Recovery Bundle v1 using SQLite backup API plus strict integrity verification and clean-target restore
 - Deployment: local Python process or Docker Compose
 - Persistent path: `${GORECLOUD_RESEARCH_DATA_DIR}/research-library.sqlite3`
 
-The product behavior, data model, application flow, source handling, evidence workflow, project model, source relationship semantics, and UI are GoreeCloud-owned. External packages are bounded framework/protocol/parser foundations rather than inherited complete-product implementations.
+The product behavior, data model, application flow, source handling, evidence workflow, project model, source relationship semantics, recovery contract, and UI are GoreeCloud-owned. External packages are bounded framework/protocol/parser/database foundations rather than inherited complete-product implementations.
 
 ## 5. Capture security requirements
 
@@ -145,6 +158,10 @@ A Saved Search stores a reusable name, text query, optional source classificatio
 
 A Schema Migration records the applied local database schema version, time, and description so Development upgrades remain explicit rather than relying only on implicit table creation.
 
+### Recovery Bundle v1
+
+A Recovery Bundle is an operator-created directory containing one consistent SQLite backup plus one strict integrity manifest. It is not stored in the application database and is not an authoritative duplicate of live application state. It is a recovery artifact that must be protected according to the sensitivity of the database it contains.
+
 ## 7. API
 
 Current Development API and export surfaces include:
@@ -162,6 +179,8 @@ Current Development API and export surfaces include:
 
 The API is unauthenticated and therefore inherits the local/private deployment boundary. It is not an approved public API. Project mutation routes are presently server-rendered form workflows rather than a declared public REST write contract.
 
+Recovery Bundle v1 is a local CLI/operator surface (`python -m app.recovery`), not a network API. No remote backup or restore endpoint is introduced.
+
 ## 8. User interface
 
 The UI uses a GoreeCloud-owned server-rendered interface aligned with current Stable Glaze UI 1.1.0 principles: readable work areas use solid surfaces; navigation/search/control chrome may use glazed surfaces; Deep Teal + Soft Amber remain subordinate accents; semantic state and accessibility remain higher priority than decoration.
@@ -178,15 +197,15 @@ Future role: launch/discovery/status visibility and, if justified, sanitized hea
 
 ### Privacy Shield
 
-Applicable because research records, project membership, saved searches, and relationship notes may expose sensitive research context. Required future capabilities include privacy classification, minimization, deletion/retention controls, redaction/export policies, privacy-safe logging, and user-visible privacy controls. Not yet integrated.
+Applicable because research records, project membership, saved searches, relationship notes, and recovery bundles may expose sensitive research context. Required future capabilities include privacy classification, minimization, deletion/retention controls, redaction/export policies, privacy-safe logging, backup/recovery retention rules, and user-visible privacy controls. Not yet integrated.
 
 ### Wardveil Security
 
-Applicable because the application performs outbound fetching and parses hostile content. Required future work includes current Wardveil contract integration, security status evidence, hostile-document/parser acceptance, abuse controls, and hardened network egress. Not yet integrated.
+Applicable because the application performs outbound fetching, parses hostile content, and creates/restores durable recovery artifacts. Application-owned ingestion and recovery checks exist, but required future work includes current Wardveil contract integration, security status evidence, hostile-document/parser acceptance, abuse controls, hardened network egress, and accepted recovery/operation security policy. Not yet integrated.
 
 ### Everkeep
 
-Applicable because the research library is durable user data. SQLite storage, schema migration records, and JSON/CSV/CSL/RIS exports provide recovery/portability primitives; Everkeep-managed backup/restore contract integration and clean-environment restore validation remain required.
+Applicable because the research library is durable user data. SQLite storage, schema migration records, JSON/CSV/CSL/RIS exports, Recovery Bundle v1, and an automated clean-target schema-v2 recovery drill now provide application-owned continuity primitives and Development evidence. Everkeep-managed backup/restore orchestration, protected backup custody, policy/retention/deletion integration, target-host recovery acceptance, disaster-recovery procedures, and broader continuity acceptance remain required.
 
 ### Glaze UI
 
@@ -206,14 +225,21 @@ Required before multi-user or Internet-facing authenticated use. Planned; not im
 - No research content is sent to third-party AI or hosted analysis services.
 - No external trackers are included in the UI.
 - Source fetching necessarily discloses the deployment's outbound IP and user-agent to the source site.
-- Stored research context, saved searches, project questions, notes, and relationship notes may themselves be sensitive and must be protected at the deployment boundary.
+- Stored research context, saved searches, project questions, notes, relationships, and recovery bundles may themselves be sensitive and must be protected at the deployment boundary.
 - Logs must not include captured page bodies or reusable credentials.
+- Recovery-bundle retention and deletion must eventually be governed consistently with Privacy Shield rather than allowing backups to become an indefinite retention bypass.
 
 ## 11. Backup, migration, and recovery
 
-The SQLite database and any future durable artifact store must be included in an approved backup system before the library becomes production-dependent. The present portable recovery path is database-file backup plus exported data.
+Recovery Bundle v1 is the preferred application-owned Development backup/restore mechanism for schema-v2 databases. It uses SQLite's backup API so a live WAL-mode database can be snapshotted consistently, then binds the result to integrity metadata and strict database checks.
 
-Schema version 2 is applied additively and records migration state. Before any incompatible future schema change, backup/rollback expectations must be defined and tested. A clean-environment restore test covering sources, snapshots, claims, projects, memberships, saved searches, relationships, search, and export plus Everkeep acceptance is required before Stable.
+Before an important upgrade or material change, create and verify a Recovery Bundle v1 and preserve a current JSON export. The recovery bundle contains the complete database and must be stored in protected storage.
+
+Restore is clean-target only and refuses to overwrite an existing database. Replacing an existing deployed database, rollback to an older database, destructive retirement, and disaster recovery remain separately governed operator workflows rather than being implicitly authorized by the recovery CLI.
+
+Schema version 2 is applied additively and records migration state. Before any incompatible future schema change, backup/rollback expectations must be defined and tested. Automated clean-environment recovery coverage now verifies representative sources, snapshots, claims, projects, memberships, saved searches, relationships, schema version, and search after restore.
+
+This closes the prior absence of an application-owned automated clean-target schema-v2 recovery primitive. It does **not** complete Everkeep integration or production recovery acceptance. Everkeep orchestration, protected/off-device custody, retention/deletion policy, operational target-environment recovery, recovery/rollback authorization, disaster recovery, and production/Stable evidence remain open.
 
 ## 12. Explicitly excluded from the current Development scope
 
@@ -229,13 +255,16 @@ Schema version 2 is applied additively and records migration state. Before any i
 - direct Zotero account/API synchronization;
 - immutable binary artifact preservation;
 - production/public API authorization;
+- remote backup/restore API;
+- automatic overwrite/rollback of an existing database;
+- Everkeep service orchestration or production disaster-recovery acceptance;
 - GoreeCloud platform-system acceptance and Stable qualification.
 
 ## 13. Next development priorities
 
 1. GoreeCloud Identity authentication and authorization before non-loopback/multi-user use.
-2. Wardveil Security and Privacy Shield integrations around fetching, parsing, logging, retention, deletion, export, and research privacy.
-3. Everkeep backup/restore orchestration and clean-environment restore evidence covering schema version 2 state.
+2. Wardveil Security and Privacy Shield integrations around fetching, parsing, logging, retention, deletion, export, recovery bundles, and research privacy.
+3. Everkeep orchestration and protected backup custody/policy plus representative target-environment recovery, rollback, and operational acceptance building on Recovery Bundle v1.
 4. Governed rendered/accessibility validation against current Stable Glaze UI 1.1.0.
 5. Stronger hostile-content isolation, outbound network egress controls, rate/abuse controls, and fetch auditability.
 6. Sandboxed browser-assisted capture for JavaScript-heavy public pages without bypassing authentication or access controls.
