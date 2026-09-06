@@ -1,6 +1,6 @@
 # GoreeCloud Research Library — User Manual
 
-**Applies to:** Development MVP `0.1.0-dev`
+**Applies to:** Development `0.2.0-dev`
 
 ## 1. Start the application
 
@@ -15,7 +15,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8088
 
 Then open `http://127.0.0.1:8088`.
 
-Do not expose the current MVP directly to the Internet. It does not yet have GoreeCloud Identity or an application authorization layer.
+Do not expose the current Development application directly to the Internet. It does not yet have GoreeCloud Identity or an application authorization layer.
 
 ## 2. Capture a source
 
@@ -66,7 +66,7 @@ In **Claims and research statements**:
 4. add the supporting evidence, limitation, conflict, or verification note when useful;
 5. save the statement.
 
-Statements remain linked to the source record.
+Statements remain linked to the source record. A statement classification is researcher-authored metadata, not an automatic verification result.
 
 ## 6. Refresh a source
 
@@ -77,28 +77,106 @@ Use **Refresh capture** to fetch the public source again.
 
 This is extracted-text change detection, not a forensic archive of every byte or visual layout of a webpage.
 
-## 7. Search
+## 7. Search and save useful searches
 
 Use the Library search box to search title, content, author, publisher, URL, and tags. Optionally filter by source classification.
 
 SQLite FTS5 is used where available. A simpler fallback search is used otherwise.
 
-## 8. Citations
+To preserve a useful search:
 
-The source page includes a readable citation helper and a basic BibTeX `@online` representation. These helpers preserve source details but are not yet a complete APA/MLA/Chicago/CSL citation engine. Verify style requirements before publication.
+1. run the search and optional source-classification filter;
+2. enter a name under **Saved searches**;
+3. select **Save current search**.
 
-## 9. Export
+Selecting a saved-search name later restores its query and classification filter. Use **Remove** to delete a saved-search record. Deleting a saved search does not delete research sources.
 
-Use **Export JSON** for the richest portable export. It includes sources, claims, and snapshots.
+## 8. Create a research project
+
+Open **Projects** from the application navigation.
+
+Create a project with:
+
+- a project name;
+- an optional research question;
+- an optional description/scope;
+- optional tags.
+
+A project is a workspace for a bounded question, decision, comparison, or investigation. It does not duplicate source content.
+
+## 9. Add sources to a project
+
+On a project page:
+
+1. choose a previously captured source;
+2. optionally enter a project-specific note explaining why the source matters;
+3. select **Add source to project**.
+
+You can also add a source to a project from the individual source page.
+
+A source can belong to multiple projects. Removing a source from one project does not delete the source from the Research Library.
+
+## 10. Record source relationships
+
+After a project contains at least two sources, use **Source relationships** to record an evidence-supported relationship between two different sources.
+
+Available relationship types are:
+
+- **Supports** — one source provides corroborating evidence;
+- **Contradicts** — material evidence conflicts;
+- **Duplicates** — the evidence is substantially redundant;
+- **Updates** — later information revises or supersedes relevant information;
+- **References** — one source explicitly cites or depends on another;
+- **Contextualizes** — one source adds scope or interpretation without necessarily confirming the claim.
+
+Choose a relationship strength and add an evidence/limitation note whenever practical.
+
+Relationships are researcher-authored evidence metadata. They are not automatically inferred truth, consensus, or verification. The project page displays a contradiction warning when one or more explicit `contradicts` relationships are present so disputed evidence is easier to review.
+
+## 11. Citations
+
+The source page provides:
+
+- a readable citation helper;
+- BibTeX `@online` output;
+- CSL JSON metadata;
+- RIS metadata.
+
+These formats improve portability and reference-manager interoperability. They are not yet a complete APA/MLA/Chicago style engine or direct Zotero synchronization. Verify publication-specific style requirements before use.
+
+## 12. Export
+
+Use **Export JSON** for the richest portable library export. Export format v2 includes sources, claims, snapshots, projects, project memberships, source relationships, and saved searches.
 
 Use **Export CSV** for a source-level tabular export.
 
-Keep exports protected if your research topics, notes, or source history are sensitive.
+Use **CSL JSON** or **RIS** for citation-oriented library export.
 
-## 10. Private-source override
+Keep exports protected if your research topics, project questions, notes, saved searches, relationship notes, or source history are sensitive.
+
+## 13. Schema upgrades and backup
+
+The Development database records local schema migrations. Version `0.2.0-dev` uses schema version 2.
+
+Before upgrading an important library, back up the SQLite database and preserve a current JSON export. Formal Everkeep integration and clean-environment restore acceptance are still required before production or Stable use.
+
+## 14. Private-source override
 
 `GORECLOUD_RESEARCH_ALLOW_PRIVATE_FETCH=true` allows private/local resolved addresses. This is a Development override for trusted environments and weakens the default SSRF defense. Do not enable it on a deployment reachable by untrusted users.
 
-## 11. Current limitations
+## 15. Current limitations
 
-The MVP does not execute webpage JavaScript, sign into sites, bypass paywalls, crawl entire sites, perform OCR, or automatically summarize/verify content with AI. Those capabilities require separate implementation and safety review.
+The Development application does not yet:
+
+- authenticate users or provide multi-user authorization;
+- execute webpage JavaScript for dynamic-page capture;
+- sign into websites or bypass access controls/paywalls;
+- recursively crawl entire sites;
+- perform OCR or image research extraction;
+- provide collaborative multi-user editing;
+- provide a full citation-style renderer or direct reference-manager account sync;
+- automatically verify claims or promote AI-generated output to facts;
+- complete Wardveil Security, Privacy Shield, Everkeep, GoreeCloud Mesh, GoreeCloud Manager, or GoreeCloud Identity integration/acceptance;
+- qualify as production-ready or Stable.
+
+Future local GoreeCloud AI assistance may summarize or compare captured material only through a separately governed, source-grounded workflow with explicit citations and user-visible uncertainty.
