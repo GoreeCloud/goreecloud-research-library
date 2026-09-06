@@ -125,11 +125,7 @@ compatibility:
   provides:
   - goreecloud-research-library-api-v1-development
 evidence:
-  acceptance_tests:
-  - tests/test_fetcher.py
-  - tests/test_extractors.py
-  - tests/test_db.py
-  - tests/test_citations.py
+  acceptance_tests: []
   release: []
 conformance:
   status: nonconformant
