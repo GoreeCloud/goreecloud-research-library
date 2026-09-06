@@ -3,8 +3,8 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
-import sqlite3
 from pathlib import Path
+import sqlite3
 from typing import Any, Iterable
 
 
@@ -63,10 +63,62 @@ CREATE TABLE IF NOT EXISTS claims (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version INTEGER PRIMARY KEY,
+    applied_at TEXT NOT NULL,
+    description TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_sources_updated_at ON sources(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sources_classification ON sources(source_classification);
 CREATE INDEX IF NOT EXISTS idx_snapshots_source_id ON snapshots(source_id, fetched_at DESC);
 CREATE INDEX IF NOT EXISTS idx_claims_source_id ON claims(source_id, created_at DESC);
+"""
+
+MIGRATION_2 = """
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    question TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'active',
+    tags TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS project_sources (
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    source_id INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    notes TEXT NOT NULL DEFAULT '',
+    added_at TEXT NOT NULL,
+    PRIMARY KEY(project_id, source_id)
+);
+
+CREATE TABLE IF NOT EXISTS source_relationships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_source_id INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    to_source_id INTEGER NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    relationship TEXT NOT NULL,
+    strength TEXT NOT NULL DEFAULT 'medium',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    CHECK(from_source_id != to_source_id),
+    UNIQUE(from_source_id, to_source_id, relationship)
+);
+
+CREATE TABLE IF NOT EXISTS saved_searches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    query TEXT NOT NULL DEFAULT '',
+    classification TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_sources_source ON project_sources(source_id, project_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_from ON source_relationships(from_source_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_relationships_to ON source_relationships(to_source_id, created_at DESC);
 """
 
 
@@ -91,6 +143,21 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.executescript(SCHEMA)
+            applied = {
+                row["version"]
+                for row in conn.execute("SELECT version FROM schema_migrations").fetchall()
+            }
+            if 1 not in applied:
+                conn.execute(
+                    "INSERT INTO schema_migrations(version, applied_at, description) VALUES (?, ?, ?)",
+                    (1, utc_now(), "Initial source, snapshot, and claim schema"),
+                )
+            if 2 not in applied:
+                conn.executescript(MIGRATION_2)
+                conn.execute(
+                    "INSERT INTO schema_migrations(version, applied_at, description) VALUES (?, ?, ?)",
+                    (2, utc_now(), "Projects, source relationships, and saved searches"),
+                )
             try:
                 conn.execute(
                     """
@@ -115,10 +182,15 @@ class Database:
             except sqlite3.OperationalError:
                 self.fts_enabled = False
 
+    def schema_version(self) -> int:
+        with self.connect() as conn:
+            row = conn.execute("SELECT MAX(version) AS version FROM schema_migrations").fetchone()
+            return int(row["version"] or 0)
+
     def _index_source(self, conn: sqlite3.Connection, row: sqlite3.Row | dict[str, Any]) -> None:
         if not self.fts_enabled:
             return
-        source_id = row["id"] if isinstance(row, sqlite3.Row) else row["id"]
+        source_id = row["id"]
         conn.execute("DELETE FROM sources_fts WHERE source_id = ?", (source_id,))
         conn.execute(
             "INSERT INTO sources_fts(source_id, title, content, tags, author, publisher) VALUES (?, ?, ?, ?, ?, ?)",
@@ -339,6 +411,193 @@ class Database:
                 "SELECT * FROM claims WHERE source_id = ? ORDER BY created_at DESC", (source_id,)
             ).fetchall()
             return [dict(row) for row in rows]
+
+    def create_project(self, name: str, question: str = "", description: str = "", tags: str = "") -> dict[str, Any]:
+        now = utc_now()
+        clean_name = name.strip()
+        if not clean_name:
+            raise ValueError("Project name is required")
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO projects(name, question, description, tags, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (clean_name, question.strip(), description.strip(), tags.strip(), now, now),
+            )
+            row = conn.execute("SELECT * FROM projects WHERE id = ?", (cursor.lastrowid,)).fetchone()
+            return dict(row)
+
+    def list_projects(self, limit: int = 100) -> list[dict[str, Any]]:
+        limit = max(1, min(limit, 500))
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT p.*, COUNT(ps.source_id) AS source_count
+                FROM projects p
+                LEFT JOIN project_sources ps ON ps.project_id = p.id
+                GROUP BY p.id
+                ORDER BY p.updated_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def get_project(self, project_id: int) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT p.*, COUNT(ps.source_id) AS source_count
+                FROM projects p
+                LEFT JOIN project_sources ps ON ps.project_id = p.id
+                WHERE p.id = ?
+                GROUP BY p.id
+                """,
+                (project_id,),
+            ).fetchone()
+            return self._dict(row)
+
+    def add_source_to_project(self, project_id: int, source_id: int, notes: str = "") -> None:
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO project_sources(project_id, source_id, notes, added_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(project_id, source_id) DO UPDATE SET notes = excluded.notes
+                """,
+                (project_id, source_id, notes.strip(), now),
+            )
+            conn.execute("UPDATE projects SET updated_at = ? WHERE id = ?", (now, project_id))
+
+    def remove_source_from_project(self, project_id: int, source_id: int) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "DELETE FROM project_sources WHERE project_id = ? AND source_id = ?",
+                (project_id, source_id),
+            )
+            conn.execute("UPDATE projects SET updated_at = ? WHERE id = ?", (utc_now(), project_id))
+
+    def list_project_sources(self, project_id: int) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT s.*, ps.notes AS project_notes, ps.added_at AS project_added_at
+                FROM project_sources ps
+                JOIN sources s ON s.id = ps.source_id
+                WHERE ps.project_id = ?
+                ORDER BY ps.added_at DESC
+                """,
+                (project_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def list_source_projects(self, source_id: int) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT p.*, ps.notes AS membership_notes, ps.added_at
+                FROM project_sources ps
+                JOIN projects p ON p.id = ps.project_id
+                WHERE ps.source_id = ?
+                ORDER BY p.updated_at DESC
+                """,
+                (source_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def upsert_relationship(
+        self,
+        from_source_id: int,
+        to_source_id: int,
+        relationship: str,
+        strength: str,
+        note: str,
+    ) -> dict[str, Any]:
+        if from_source_id == to_source_id:
+            raise ValueError("A source cannot be related to itself")
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO source_relationships(
+                    from_source_id, to_source_id, relationship, strength, note, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(from_source_id, to_source_id, relationship)
+                DO UPDATE SET strength = excluded.strength, note = excluded.note
+                """,
+                (from_source_id, to_source_id, relationship, strength, note.strip(), now),
+            )
+            row = conn.execute(
+                """
+                SELECT * FROM source_relationships
+                WHERE from_source_id = ? AND to_source_id = ? AND relationship = ?
+                """,
+                (from_source_id, to_source_id, relationship),
+            ).fetchone()
+            return dict(row)
+
+    def list_source_relationships(self, source_id: int) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT r.*, fs.title AS from_title, fs.url AS from_url,
+                       ts.title AS to_title, ts.url AS to_url
+                FROM source_relationships r
+                JOIN sources fs ON fs.id = r.from_source_id
+                JOIN sources ts ON ts.id = r.to_source_id
+                WHERE r.from_source_id = ? OR r.to_source_id = ?
+                ORDER BY r.created_at DESC
+                """,
+                (source_id, source_id),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def list_project_relationships(self, project_id: int) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT r.*, fs.title AS from_title, ts.title AS to_title
+                FROM source_relationships r
+                JOIN sources fs ON fs.id = r.from_source_id
+                JOIN sources ts ON ts.id = r.to_source_id
+                JOIN project_sources pf ON pf.source_id = r.from_source_id AND pf.project_id = ?
+                JOIN project_sources pt ON pt.source_id = r.to_source_id AND pt.project_id = ?
+                ORDER BY r.created_at DESC
+                """,
+                (project_id, project_id),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def save_search(self, name: str, query: str = "", classification: str = "") -> dict[str, Any]:
+        now = utc_now()
+        clean_name = name.strip()
+        if not clean_name:
+            raise ValueError("Saved search name is required")
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO saved_searches(name, query, classification, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(name) DO UPDATE SET
+                    query = excluded.query,
+                    classification = excluded.classification,
+                    updated_at = excluded.updated_at
+                """,
+                (clean_name, query.strip(), classification.strip(), now, now),
+            )
+            row = conn.execute("SELECT * FROM saved_searches WHERE name = ?", (clean_name,)).fetchone()
+            return dict(row)
+
+    def list_saved_searches(self) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT * FROM saved_searches ORDER BY updated_at DESC").fetchall()
+            return [dict(row) for row in rows]
+
+    def delete_saved_search(self, search_id: int) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM saved_searches WHERE id = ?", (search_id,))
 
     def all_sources(self) -> list[dict[str, Any]]:
         return self.list_sources(limit=500)
