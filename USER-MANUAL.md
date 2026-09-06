@@ -154,11 +154,37 @@ Use **CSL JSON** or **RIS** for citation-oriented library export.
 
 Keep exports protected if your research topics, project questions, notes, saved searches, relationship notes, or source history are sensitive.
 
-## 13. Schema upgrades and backup
+## 13. Recovery Bundle v1, schema upgrades, and backup
 
 The Development database records local schema migrations. Version `0.2.0-dev` uses schema version 2.
 
-Before upgrading an important library, back up the SQLite database and preserve a current JSON export. Formal Everkeep integration and clean-environment restore acceptance are still required before production or Stable use.
+For an important library, create a verified Recovery Bundle v1 before an upgrade or other material change:
+
+```bash
+python -m app.recovery backup --output /protected/path/research-library-backup
+```
+
+Verify an existing bundle independently:
+
+```bash
+python -m app.recovery verify --bundle /protected/path/research-library-backup
+```
+
+To test recovery, restore into a database path that does not already exist:
+
+```bash
+python -m app.recovery restore \
+  --bundle /protected/path/research-library-backup \
+  --target-database /clean/path/research-library.sqlite3
+```
+
+The restore command deliberately refuses to overwrite an existing database. Keep a current JSON export as an additional portable artifact.
+
+Recovery bundles contain the complete research database and may be sensitive. Store them in protected locations. The manifest's SHA-256 verifies byte integrity but is not encryption, a digital signature, identity evidence, or authorization.
+
+The repository includes an automated clean-target schema-v2 recovery drill, but formal Everkeep orchestration, target-host recovery acceptance, retention/deletion policy, and production/Stable recovery acceptance remain required.
+
+See `docs/recovery-bundle.md` for the full format and safety contract.
 
 ## 14. Private-source override
 
@@ -176,7 +202,8 @@ The Development application does not yet:
 - provide collaborative multi-user editing;
 - provide a full citation-style renderer or direct reference-manager account sync;
 - automatically verify claims or promote AI-generated output to facts;
-- complete Wardveil Security, Privacy Shield, Everkeep, GoreeCloud Mesh, GoreeCloud Manager, or GoreeCloud Identity integration/acceptance;
+- provide accepted Everkeep orchestration, off-device/protected backup custody, retention/deletion policy, or production recovery acceptance;
+- complete Wardveil Security, Privacy Shield, GoreeCloud Mesh, GoreeCloud Manager, or GoreeCloud Identity integration/acceptance;
 - qualify as production-ready or Stable.
 
 Future local GoreeCloud AI assistance may summarize or compare captured material only through a separately governed, source-grounded workflow with explicit citations and user-visible uncertainty.
