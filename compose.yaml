@@ -1,0 +1,29 @@
+services:
+  research-library:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      GORECLOUD_RESEARCH_DATA_DIR: /data
+      GORECLOUD_RESEARCH_ALLOW_PRIVATE_FETCH: "false"
+      GORECLOUD_RESEARCH_RESPECT_ROBOTS: "true"
+    ports:
+      - "127.0.0.1:8088:8080"
+    volumes:
+      - research-library-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  research-library-data:

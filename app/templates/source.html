@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}{{ source.title or 'Source' }} · Research Library{% endblock %}
+{% block content %}
+<a class="back-link" href="/">← Back to library</a>
+
+{% if capture %}
+<div class="notice {% if capture.startswith('error:') %}error{% else %}success{% endif %}" role="status">
+  {% if capture == 'created' %}Source captured and indexed.
+  {% elif capture == 'changed' %}Source refreshed; the extracted content changed and a new snapshot was preserved.
+  {% elif capture == 'unchanged' %}Source refreshed; no extracted-content change was detected.
+  {% elif capture.startswith('error:') %}Refresh failed: {{ capture[6:] }}
+  {% endif %}
+</div>
+{% endif %}
+
+<section class="detail-header">
+  <div>
+    <div class="source-card-topline">
+      <span class="pill">{{ source.source_type|upper }}</span>
+      <span class="pill neutral">{{ source.source_classification.replace('-', ' ') }}</span>
+    </div>
+    <h1>{{ source.title or source.url }}</h1>
+    <a href="{{ source.url }}" target="_blank" rel="noopener noreferrer" class="source-url">{{ source.url }}</a>
+    <p>{{ source.excerpt }}</p>
+  </div>
+  <form action="/sources/{{ source.id }}/refresh" method="post">
+    <button type="submit" class="secondary">Refresh capture</button>
+  </form>
+</section>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <section class="solid-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Extracted research text</p>
+          <h2>Captured content</h2>
+        </div>
+        <span class="subtle">SHA-256 {{ source.content_hash[:12] }}…</span>
+      </div>
+      <pre class="research-text">{{ source.content }}</pre>
+    </section>
+
+    <section class="solid-panel" id="claims">
+      <p class="eyebrow">Evidence ledger</p>
+      <h2>Claims and research statements</h2>
+      <form action="/sources/{{ source.id }}/claims" method="post" class="stack-form">
+        <label for="statement">Statement</label>
+        <textarea id="statement" name="statement" rows="3" placeholder="Record a fact, claim, observation, inference, recommendation, decision, assumption, or other research statement." required></textarea>
+        <div class="form-grid two">
+          <div>
+            <label for="classification_claim">Classification</label>
+            <select id="classification_claim" name="classification">
+              {% for value in research_classifications %}<option value="{{ value }}">{{ value.replace('-', ' ')|title }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="confidence">Confidence</label>
+            <select id="confidence" name="confidence">
+              {% for value in confidence_levels %}<option value="{{ value }}">{{ value|title }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <label for="evidence_note">Evidence note / limitation</label>
+        <textarea id="evidence_note" name="evidence_note" rows="2" placeholder="Why this classification is appropriate, limitations, conflict notes, or verification needed."></textarea>
+        <button type="submit">Add statement</button>
+      </form>
+
+      <div class="claim-list">
+        {% for claim in claims %}
+        <article class="claim-card">
+          <div class="source-card-topline">
+            <span class="pill">{{ claim.classification.replace('-', ' ') }}</span>
+            <span class="subtle">{{ claim.confidence }} confidence · {{ claim.created_at[:10] }}</span>
+          </div>
+          <p class="claim-statement">{{ claim.statement }}</p>
+          {% if claim.evidence_note %}<p class="subtle">{{ claim.evidence_note }}</p>{% endif %}
+        </article>
+        {% else %}
+        <p class="subtle">No research statements recorded yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="detail-sidebar">
+    <section class="solid-panel">
+      <p class="eyebrow">Source record</p>
+      <h2>Metadata & classification</h2>
+      <form action="/sources/{{ source.id }}/metadata" method="post" class="stack-form compact">
+        <label for="title">Title</label>
+        <input id="title" name="title" value="{{ source.title }}">
+        <label for="author">Author</label>
+        <input id="author" name="author" value="{{ source.author }}">
+        <label for="publisher">Publisher / organization</label>
+        <input id="publisher" name="publisher" value="{{ source.publisher }}">
+        <label for="published_at">Publication / update date</label>
+        <input id="published_at" name="published_at" value="{{ source.published_at }}" placeholder="YYYY-MM-DD or source value">
+        <label for="source_classification">Source classification</label>
+        <select id="source_classification" name="source_classification">
+          {% for value in source_classifications %}
+          <option value="{{ value }}" {% if source.source_classification == value %}selected{% endif %}>{{ value.replace('-', ' ')|title }}</option>
+          {% endfor %}
+        </select>
+        <label for="evidence_status">Primary evidence status</label>
+        <select id="evidence_status" name="evidence_status">
+          {% for value in research_classifications %}
+          <option value="{{ value }}" {% if source.evidence_status == value %}selected{% endif %}>{{ value.replace('-', ' ')|title }}</option>
+          {% endfor %}
+        </select>
+        <label for="tags">Tags</label>
+        <input id="tags" name="tags" value="{{ source.tags }}" placeholder="security, dns, comparison">
+        <label for="notes">Research notes</label>
+        <textarea id="notes" name="notes" rows="5">{{ source.notes }}</textarea>
+        <button type="submit">Save source record</button>
+      </form>
+    </section>
+
+    <section class="solid-panel">
+      <p class="eyebrow">Traceability</p>
+      <h2>Capture history</h2>
+      <dl class="facts">
+        <div><dt>Accessed</dt><dd>{{ source.accessed_at }}</dd></div>
+        <div><dt>Last fetch</dt><dd>{{ source.fetched_at }}</dd></div>
+        <div><dt>Last change</dt><dd>{{ source.last_changed_at }}</dd></div>
+        <div><dt>HTTP</dt><dd>{{ source.http_status }}</dd></div>
+        <div><dt>Type</dt><dd>{{ source.content_type }}</dd></div>
+        <div><dt>Snapshots</dt><dd>{{ snapshots|length }}</dd></div>
+      </dl>
+      <div class="snapshot-list">
+        {% for snapshot in snapshots %}
+        <div><code>{{ snapshot.content_hash[:10] }}</code><span>{{ snapshot.fetched_at[:19] }}</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="solid-panel">
+      <p class="eyebrow">Citation helper</p>
+      <h2>Reusable citation</h2>
+      <label>Readable citation</label>
+      <textarea readonly rows="6">{{ citation_markdown }}</textarea>
+      <a class="button-link secondary" href="/sources/{{ source.id }}/citation?format=markdown">Open text citation</a>
+      <label>BibTeX</label>
+      <textarea readonly rows="9">{{ citation_bibtex }}</textarea>
+      <a class="button-link secondary" href="/sources/{{ source.id }}/citation?format=bibtex">Open BibTeX</a>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}GoreeCloud Research Library{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+</head>
+<body>
+  <header class="system-shell">
+    <a class="brand" href="/" aria-label="GoreeCloud Research Library home">
+      <span class="brand-kicker">GoreeCloud</span>
+      <span class="brand-title">Research Library</span>
+    </a>
+    <nav class="shell-actions" aria-label="Primary">
+      <a href="/">Library</a>
+      <a href="/export.json">Export JSON</a>
+      <a href="/export.csv">Export CSV</a>
+      <a href="/docs" target="_blank" rel="noopener">API</a>
+    </nav>
+  </header>
+  <main class="page-shell">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="page-footer">
+    <span>Development build · local-first research workspace</span>
+    <span>Glaze UI 1.1 alignment target · full conformance validation pending</span>
+  </footer>
+</body>
+</html>

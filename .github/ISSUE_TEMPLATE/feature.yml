@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a research capability or workflow improvement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: requirement
+    attributes:
+      label: Requirement or problem
+      description: Describe the research need before proposing an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should become easier, safer, more accurate, or more portable?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Example workflow or evidence
+      description: Optional non-sensitive examples, standards, or interoperability targets.
+  - type: checkboxes
+    id: platform
+    attributes:
+      label: Platform impact to consider
+      options:
+        - label: GoreeCloud Manager
+        - label: Privacy Shield
+        - label: Wardveil Security
+        - label: Everkeep
+        - label: Glaze UI
+        - label: GoreeCloud Mesh
+        - label: GoreeCloud Identity
