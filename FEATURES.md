@@ -14,30 +14,35 @@ Status legend: **Implemented**, **Partial**, **Planned**, or **Not approved/impl
 | robots.txt respect | Implemented | default enabled; configurable for controlled Development use |
 | Extracted-content hash and change detection | Implemented | SHA-256 |
 | Extracted-text snapshots | Implemented | unique by source + content hash |
+| Additive local schema-migration tracking | Implemented, Development | `schema_migrations`, current schema version 2 |
 | Research evidence classification | Implemented | source and statement classifications |
 | Research notes and tags | Implemented | source metadata form |
 | Individual claims/statements | Implemented | classification, confidence, limitation/evidence note |
 | Full-text search | Implemented | FTS5 when available, fallback search otherwise |
+| Saved searches / smart discovery | Implemented | named repeatable query + source-classification filters |
+| Collections / research projects | Implemented, Development | project question, description, tags, source membership, project-specific notes |
+| Source relationship graph | Implemented, Development | supports, contradicts, duplicates, updates, references, contextualizes |
+| Source conflict and triangulation UI | Implemented, Development | project relationship summary plus explicit contradiction warning; relationships remain researcher-authored metadata |
 | Markdown citation helper | Implemented | simple reusable citation, not a complete style engine |
 | BibTeX helper | Implemented | lightweight `@online` export |
-| JSON export | Implemented | source + claims + snapshots |
+| CSL JSON citation portability | Implemented, Development | source-level and library export; not a complete citation-style renderer |
+| RIS citation portability | Implemented, Development | source-level and library export |
+| JSON export | Implemented | export v2 contains sources, claims, snapshots, projects, memberships, relationships, and saved searches |
 | CSV export | Implemented | source-level export |
-| Health endpoint | Implemented | `/healthz` |
+| Health endpoint | Implemented | `/healthz`, includes schema version and FTS state |
 | Server-rendered responsive UI | Implemented | Development UI |
-| Glaze UI Stable contract conformance | Partial | visual alignment only; governed validation pending |
+| Development source/project API | Implemented | `/api/v1/sources`, `/api/v1/projects`, capture endpoint |
+| GoreeCloud Platform Contract validation | Implemented for Development manifest validation | reusable canonical workflow; current manifest intentionally remains nonconformant while platform integrations are incomplete |
+| Glaze UI Stable contract conformance | Partial | current Stable 1.1.0 alignment target; governed rendered/accessibility acceptance pending |
 | GoreeCloud Identity | Planned | required before multi-user/public authenticated deployment |
 | Privacy Shield | Planned | privacy contract integration pending |
 | Wardveil Security | Planned | security contract integration pending |
-| Everkeep | Partial | portable data exists; contract integration and restore acceptance pending |
+| Everkeep | Partial | portable data and migration records exist; contract integration and clean restore acceptance pending |
 | GoreeCloud Mesh | Planned | no capability/event integration yet |
 | GoreeCloud Manager | Planned | no Manager visibility/launch integration yet |
-| Collections / research projects | Planned | normalized project model not yet implemented |
-| Saved searches / smart collections | Planned | not implemented |
-| Source relationship graph | Planned | not implemented |
-| Source conflict and triangulation UI | Planned | classification primitives exist; dedicated workflow not yet implemented |
 | Browser-rendered dynamic-page capture | Planned | current fetcher does not execute page JavaScript |
 | Browser extension / share-sheet capture | Planned | not implemented |
-| CSL / Zotero-compatible citation workflow | Planned | not implemented |
-| Local AI summarization and Q&A | Planned | no AI calls are made by the MVP |
+| Full CSL style engine / direct Zotero workflow | Partial / Planned | CSL JSON and RIS portability implemented; full style rendering and direct integration not implemented |
+| Local AI summarization and Q&A | Planned | no AI calls are made by the Development application; future output must remain source-grounded and citation-linked |
 | OCR and image research extraction | Not approved/implemented | requires separate threat/privacy/performance design |
 | Authenticated/paywall bypass | Not approved/implemented | intentionally outside product behavior |

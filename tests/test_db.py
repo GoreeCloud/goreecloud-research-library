@@ -1,10 +1,10 @@
 from app.db import Database
 
 
-def capture_payload(content: str, content_hash: str):
+def capture_payload(content: str, content_hash: str, url: str = "https://example.org/source"):
     return {
-        "url": "https://example.org/source",
-        "canonical_url": "https://example.org/source",
+        "url": url,
+        "canonical_url": url,
         "title": "Example source",
         "author": "Example Author",
         "publisher": "Example Org",
@@ -59,3 +59,52 @@ def test_metadata_and_claims_are_research_classified(database: Database):
     )
     assert claim["classification"] == "verified-fact"
     assert database.list_claims(source["id"])[0]["confidence"] == "high"
+
+
+def test_project_membership_and_evidence_relationships(database: Database):
+    first, _, _ = database.save_capture(
+        capture_payload("first evidence", "hash-first", "https://example.org/first")
+    )
+    second, _, _ = database.save_capture(
+        capture_payload("second evidence", "hash-second", "https://example.org/second")
+    )
+    project = database.create_project(
+        "Evidence comparison",
+        "Do the sources agree?",
+        "Compare two public sources.",
+        "comparison",
+    )
+    database.add_source_to_project(project["id"], first["id"], "Primary reference")
+    database.add_source_to_project(project["id"], second["id"], "Independent check")
+
+    members = database.list_project_sources(project["id"])
+    assert {source["id"] for source in members} == {first["id"], second["id"]}
+    assert database.get_project(project["id"])["source_count"] == 2
+
+    relationship = database.upsert_relationship(
+        first["id"],
+        second["id"],
+        "supports",
+        "high",
+        "Both sources independently report the same bounded fact.",
+    )
+    assert relationship["relationship"] == "supports"
+    project_relationships = database.list_project_relationships(project["id"])
+    assert len(project_relationships) == 1
+    assert project_relationships[0]["strength"] == "high"
+    assert len(database.list_source_relationships(first["id"])) == 1
+
+
+def test_saved_searches_are_repeatable_and_updatable(database: Database):
+    saved = database.save_search("Primary docs", "DNSSEC", "external-primary")
+    assert saved["query"] == "DNSSEC"
+    database.save_search("Primary docs", "DNSSEC validation", "external-primary")
+    searches = database.list_saved_searches()
+    assert len(searches) == 1
+    assert searches[0]["query"] == "DNSSEC validation"
+    database.delete_saved_search(searches[0]["id"])
+    assert database.list_saved_searches() == []
+
+
+def test_schema_migration_version_is_recorded(database: Database):
+    assert database.schema_version() == 2

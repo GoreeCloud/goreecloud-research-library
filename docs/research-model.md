@@ -1,6 +1,6 @@
 # Research and Evidence Model
 
-GoreeCloud Research Library is designed to preserve the difference between **a source existing** and **a proposition being established as true**.
+GoreeCloud Research Library is designed to preserve the difference between **a source existing**, **a researcher recording a relationship**, and **a proposition being established as true**.
 
 ## Source record
 
@@ -64,20 +64,59 @@ Use when provenance or authority has not yet been established.
 
 Confidence is separate from classification. A statement may be a high-confidence inference and still be an inference. A vendor claim may be accurately captured with high confidence while the underlying product claim remains unverified.
 
-## Time sensitivity
+## Research projects
 
-Availability, pricing, software versions, policies, release status, and other changing facts should carry access/as-of context. The source record always stores an access time; research statements should preserve time context in their wording or evidence note when it materially affects correctness.
+A research project groups existing source records around one bounded question, comparison, decision, or investigation. A project may carry its own question, description, tags, and project-specific notes for each source membership.
 
-## Conflicts
+Project membership does not change the source's global provenance or classification. The same source can participate in more than one project without duplicating the captured evidence.
 
-The MVP lets the researcher record limitation/conflict notes but does not yet provide a dedicated contradiction graph. Until that feature exists:
+## Source relationships
+
+A source relationship is explicit researcher-authored evidence metadata connecting two different source records. Current relationship types are:
+
+- **Supports** — one source provides corroborating evidence for the other source or a proposition under review.
+- **Contradicts** — material evidence conflicts.
+- **Duplicates** — substantially redundant evidence.
+- **Updates** — later evidence revises or supersedes relevant information.
+- **References** — one source explicitly cites, links to, or depends on another.
+- **Contextualizes** — one source adds scope, background, or interpretation without necessarily confirming the claim.
+
+Each relationship can carry a strength and an evidence/limitation note. Relationship strength expresses the researcher's assessment of that relationship; it does not measure universal truth or authority.
+
+Relationships are stored against global source identities. The project UI restricts relationship entry to sources currently included in that project so a relationship is recorded in a concrete research context. If project membership later changes, the relationship record is preserved as research metadata rather than silently discarded.
+
+## Triangulation and conflicts
+
+The project workspace summarizes explicit relationship counts and raises a visible warning when `contradicts` relationships exist. This is a navigation and review aid only.
+
+When evidence conflicts:
 
 1. preserve each material source independently;
 2. classify source authority separately;
-3. record conflicting statements as separate research statements;
-4. do not silently merge disagreement into one asserted fact;
-5. use Unknown / Verification Required when evidence is insufficient to resolve the conflict.
+3. record the material conflict explicitly with a `contradicts` relationship and evidence note when appropriate;
+4. preserve conflicting claims as separate research statements when the proposition itself matters;
+5. do not silently collapse disagreement into one asserted fact;
+6. use Unknown / Verification Required when evidence is insufficient to resolve the conflict;
+7. record a resolution as a separate supported research conclusion rather than rewriting historical evidence.
+
+A majority of supporting relationships does not automatically establish a Verified Fact. Source authority, scope, timeliness, methodology, independence, and direct evidence remain relevant.
+
+## Time sensitivity
+
+Availability, pricing, software versions, policies, release status, and other changing facts should carry access/as-of context. The source record always stores an access time; research statements and relationship notes should preserve time context when it materially affects correctness.
+
+## Saved searches
+
+A saved search preserves a reusable library query and optional source-classification filter. It is a discovery convenience, not a frozen evidence snapshot. Results may change as the library changes.
+
+## Citation portability
+
+Readable, BibTeX, CSL JSON, and RIS representations are metadata exports. They do not add authority to the underlying source or guarantee conformance with every publication-specific citation style.
+
+## AI assistance boundary
+
+The current Development application does not automatically summarize or verify research with AI. Future local GoreeCloud AI integration may assist with source-grounded summarization, comparison, entity extraction, question answering, and drafting research statements only when outputs remain linked to source evidence and visibly distinguished from verified fact. AI-generated output must not silently change source classifications or relationship truth status.
 
 ## Sensitive information
 
-Do not place reusable credentials, private keys, tokens, recovery codes, or similar secrets in research records. Research topics, browsing history, annotations, and source collections may themselves be sensitive; protect database files and exports accordingly.
+Do not place reusable credentials, private keys, tokens, recovery codes, or similar secrets in research records. Research topics, browsing history, project questions, annotations, saved searches, relationship notes, and source collections may themselves be sensitive; protect database files and exports accordingly.

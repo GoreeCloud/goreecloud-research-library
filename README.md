@@ -2,24 +2,27 @@
 
 GoreeCloud Research Library is a native GoreeCloud research workspace for collecting public web sources into a traceable, searchable local library. Paste a URL and the application fetches the public resource, extracts useful text and metadata, records access time and a SHA-256 content identity, preserves extracted-text snapshots, and gives the source an evidence record that can be reviewed later.
 
-**Lifecycle:** Development / initial MVP (`0.1.0-dev`). This repository is not Stable and is not approved for Internet-facing or production use.
+**Lifecycle:** Development (`0.2.0-dev`). This repository is not Stable and is not approved for Internet-facing or production use.
 
 ## What is implemented now
 
-- Public HTTP(S) URL capture with redirect limits, timeouts, response-size limits, and credential-in-URL rejection.
-- Default SSRF guard that rejects private, loopback, link-local, reserved, and otherwise non-public resolved addresses.
-- `robots.txt` checking enabled by default.
+- Public HTTP(S) URL capture with redirect limits, timeouts, response-size limits, credential-in-URL rejection, default public-address validation, and robots.txt handling.
 - Extraction for HTML/XHTML, PDF, plain text, Markdown, JSON, XML, RSS, and Atom resources.
-- HTML metadata extraction for title, author, publisher/site, publication date, and canonical URL when available.
-- Local SQLite source library with preserved extracted-text snapshots and SHA-256 change detection.
+- Metadata extraction for title, author, publisher/site, publication date, and canonical URL when available.
+- Local SQLite source library with extracted-text snapshots, SHA-256 change detection, and schema-migration records.
 - Search across captured title, content, tags, author, and publisher; SQLite FTS5 is used when available, with a fallback search path.
+- Saved searches for repeatable research discovery.
 - GoreeCloud research/evidence classifications for source records and individual statements.
 - Research notes, tags, confidence levels, and evidence/limitation notes.
-- Markdown-style and BibTeX citation helpers.
-- JSON and CSV export.
-- Human UI plus a small `/api/v1` capture/read API and `/healthz` health signal.
+- Research projects with a question, description, tags, and explicit source membership.
+- Source-to-source evidence relationships: supports, contradicts, duplicates, updates, references, and contextualizes.
+- Relationship strength and researcher-authored evidence/limitation notes.
+- Project-level relationship summary with a visible contradiction warning when explicit conflicts are recorded.
+- Readable citation, BibTeX, CSL JSON, and RIS citation helpers.
+- JSON, CSV, CSL JSON, and RIS exports.
+- Human UI plus `/api/v1` source/project read APIs, capture API, and `/healthz` health signal.
 - Loopback-first Docker Compose deployment with a persistent data volume.
-- Automated tests and GitHub Actions CI.
+- Automated tests, GitHub Actions CI, and GoreeCloud Platform Contract validation.
 
 ## Quick start
 
@@ -42,43 +45,43 @@ docker compose up --build
 
 The Compose configuration publishes only to `127.0.0.1:8088` by default.
 
+## Research workflow
+
+1. Capture a public source URL.
+2. Review extracted metadata and source classification.
+3. Record research statements with explicit classification, confidence, and limitations.
+4. Create a research project for a bounded question, investigation, or decision.
+5. Add related captured sources to the project.
+6. Record only evidence-supported source relationships such as `supports` or `contradicts`.
+7. Use the relationship summary as a navigation aid, not an automatic truth verdict.
+8. Save useful library searches for repeatable discovery.
+9. Export the library or citation data when needed.
+
+A relationship is researcher-authored metadata. GoreeCloud Research Library does not automatically promote a source, relationship, summary, or AI-generated statement into a Verified Fact.
+
 ## Capture model
 
-A normal capture records:
-
-1. final fetched URL and canonical URL metadata when present;
-2. title, author, publisher/organization, publication/update date when extractable;
-3. access/fetch time, HTTP status, content type, and source type;
-4. cleaned extracted text and excerpt;
-5. SHA-256 content identity;
-6. a snapshot only when a new extracted-text hash is observed;
-7. source classification, evidence status, tags, notes, and optional research statements.
+A normal capture records the final fetched URL, canonical URL metadata when present, source metadata, access/fetch time, HTTP/content type, cleaned extracted text, excerpt, SHA-256 content identity, a new snapshot when the extracted-text hash changes, and user-controlled research classification/notes.
 
 The application stores extracted research text rather than executable page HTML. It does not intentionally bypass logins, paywalls, anti-bot controls, or access restrictions.
 
-## Evidence classifications
-
-The research ledger supports: Verified Fact, Source-Reported / Vendor Claim, Direct Observation, Test Result, Inference, Recommendation, Decision, Planned Configuration, Assumption, Estimate, Historical, and Unknown / Verification Required.
-
-Source-origin classes include GoreeCloud authoritative, external primary, independent technical, community evidence, retail/availability, and unknown/verification required.
-
 ## Security boundary
 
-The Development MVP has **no user authentication or GoreeCloud Identity integration yet**. Keep it loopback-only or otherwise behind an approved authenticated boundary. Public-source fetching is an outbound network capability and must be treated as a security-sensitive feature.
+The Development application has **no user authentication or GoreeCloud Identity integration yet**. Keep it loopback-only or otherwise behind an approved authenticated boundary. Public-source fetching is an outbound network capability and must be treated as security-sensitive.
 
-The default configuration blocks non-public destinations, enforces fetch limits, and respects robots.txt. DNS rebinding, parser complexity, hostile documents, and deployment egress policy still require further hardening before Internet-facing production acceptance. See [SECURITY.md](SECURITY.md) and [docs/security-model.md](docs/security-model.md).
+The default configuration blocks non-public destinations, enforces fetch limits, and respects robots.txt. DNS rebinding, parser complexity, hostile documents, deployment egress policy, abuse controls, and platform-system acceptance remain open before Internet-facing production use. See [SECURITY.md](SECURITY.md) and [docs/security-model.md](docs/security-model.md).
 
 ## GoreeCloud platform status
 
-The repository declares its current state in [`goreecloud.platform.yaml`](goreecloud.platform.yaml). The application is intentionally **nonconformant / Development** while mandatory platform integrations and acceptance work remain incomplete.
+The repository declares its current state in [`goreecloud.platform.yaml`](goreecloud.platform.yaml). It remains intentionally **nonconformant / Development** while mandatory platform integrations and acceptance work remain incomplete.
 
-- Glaze UI: interface is aligned to the current Stable 1.1 visual principles, but formal contract/rendered acceptance has not been completed.
-- Wardveil Security: not yet integrated/accepted.
-- Privacy Shield: not yet integrated/accepted.
-- Everkeep: export and local durability primitives exist, but Everkeep contract integration and restore acceptance are not complete.
-- GoreeCloud Mesh: planned, not implemented.
-- GoreeCloud Identity: planned, not implemented.
-- GoreeCloud Manager: future visibility/launch integration; not required for the standalone Development MVP.
+- Glaze UI: Development interface targets current Stable 1.1.0; formal contract/rendered/accessibility acceptance is pending.
+- Wardveil Security: not yet integrated or accepted.
+- Privacy Shield: not yet integrated or accepted.
+- Everkeep: export, migration, and local durability primitives exist, but Everkeep integration and restore acceptance remain incomplete.
+- GoreeCloud Mesh: planned; no capability/event integration yet.
+- GoreeCloud Identity: required before multi-user or Internet-facing authenticated use.
+- GoreeCloud Manager: future launch/discovery/status integration; no integration is claimed.
 
 No missing integration is represented as complete.
 

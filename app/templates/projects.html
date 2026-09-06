@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Projects · Research Library{% endblock %}
+{% block content %}
+<a class="back-link" href="/">← Back to library</a>
+<section class="hero-panel">
+  <div>
+    <p class="eyebrow">Research workspaces</p>
+    <h1>Group sources around a question, decision, or investigation.</h1>
+    <p class="hero-copy">Projects keep related sources together and provide a bounded place to record how sources corroborate, contradict, update, duplicate, reference, or contextualize one another.</p>
+  </div>
+  <form action="/projects" method="post" class="capture-form">
+    <label for="project-name">Project name</label>
+    <input id="project-name" name="name" placeholder="DNS resolver comparison" required>
+    <label for="project-question">Research question</label>
+    <textarea id="project-question" name="question" rows="2" placeholder="What am I trying to establish or decide?"></textarea>
+    <label for="project-description">Description</label>
+    <textarea id="project-description" name="description" rows="3" placeholder="Scope, constraints, expected outcome, or context."></textarea>
+    <label for="project-tags">Tags</label>
+    <input id="project-tags" name="tags" placeholder="dns, privacy, infrastructure">
+    <button type="submit">Create project</button>
+  </form>
+</section>
+
+<section class="source-grid" aria-label="Research projects">
+  {% for project in projects %}
+  <article class="source-card">
+    <div class="source-card-topline">
+      <span class="pill">{{ project.status|upper }}</span>
+      <span class="subtle">{{ project.source_count }} source{% if project.source_count != 1 %}s{% endif %}</span>
+    </div>
+    <h2><a href="/projects/{{ project.id }}">{{ project.name }}</a></h2>
+    {% if project.question %}<p class="claim-statement">{{ project.question }}</p>{% endif %}
+    {% if project.description %}<p>{{ project.description }}</p>{% endif %}
+    {% if project.tags %}<p class="tags">{{ project.tags }}</p>{% endif %}
+  </article>
+  {% else %}
+  <div class="empty-state">
+    <h2>No research projects yet.</h2>
+    <p>Create one to organize sources around a specific research question or decision.</p>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

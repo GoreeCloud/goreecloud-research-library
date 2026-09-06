@@ -5,7 +5,7 @@
   <div>
     <p class="eyebrow">Capture evidence, not just bookmarks</p>
     <h1>Research from public web sources in one traceable library.</h1>
-    <p class="hero-copy">Paste a URL to collect readable text, source metadata, access time, content hash, and a preserved extracted-text snapshot. Classify evidence, record claims, search it later, and export the library without a hosted dependency.</p>
+    <p class="hero-copy">Paste a URL to collect readable text, source metadata, access time, content hash, and a preserved extracted-text snapshot. Classify evidence, connect sources in research projects, record claims, search it later, and export the library without a hosted dependency.</p>
   </div>
   <form class="capture-form" action="/capture" method="post">
     <label for="url">Source URL</label>
@@ -35,6 +35,36 @@
     <button type="submit" class="secondary">Search</button>
   </form>
   <div class="result-count">{{ sources|length }} source{% if sources|length != 1 %}s{% endif %}</div>
+</section>
+
+<section class="solid-panel" aria-labelledby="saved-searches-heading">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Repeatable discovery</p>
+      <h2 id="saved-searches-heading">Saved searches</h2>
+    </div>
+  </div>
+  <form action="/saved-searches" method="post" class="search-form">
+    <label class="sr-only" for="saved-search-name">Saved search name</label>
+    <input id="saved-search-name" name="name" placeholder="Name this search" required>
+    <input type="hidden" name="query" value="{{ q }}">
+    <input type="hidden" name="classification" value="{{ classification }}">
+    <button type="submit" class="secondary">Save current search</button>
+  </form>
+  <div class="source-meta-row">
+    {% for search in saved_searches %}
+    <form method="get" action="/" class="inline-form">
+      <input type="hidden" name="q" value="{{ search.query }}">
+      <input type="hidden" name="classification" value="{{ search.classification }}">
+      <button type="submit" class="secondary">{{ search.name }}</button>
+    </form>
+    <form action="/saved-searches/{{ search.id }}/delete" method="post" class="inline-form">
+      <button type="submit" class="secondary" aria-label="Delete saved search {{ search.name }}">Remove</button>
+    </form>
+    {% else %}
+    <span class="subtle">No saved searches yet. Run a useful search, then save it here.</span>
+    {% endfor %}
+  </div>
 </section>
 
 <section class="source-grid" aria-label="Captured sources">
