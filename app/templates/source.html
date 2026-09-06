@@ -81,6 +81,53 @@
         {% endfor %}
       </div>
     </section>
+
+    <section class="solid-panel" id="projects">
+      <p class="eyebrow">Research organization</p>
+      <h2>Project memberships</h2>
+      {% if projects %}
+      <form action="/sources/{{ source.id }}/projects" method="post" class="stack-form">
+        <label for="project-id">Add to project</label>
+        <select id="project-id" name="project_id" required>
+          {% for project in projects %}<option value="{{ project.id }}">{{ project.name }}</option>{% endfor %}
+        </select>
+        <label for="project-note">Project-specific note</label>
+        <input id="project-note" name="notes" placeholder="Why this source matters to the project">
+        <button type="submit">Add to project</button>
+      </form>
+      {% else %}
+      <p class="subtle">Create a <a href="/projects">research project</a> to group this source with related evidence.</p>
+      {% endif %}
+      <div class="claim-list">
+        {% for project in source_projects %}
+        <article class="claim-card">
+          <h3><a href="/projects/{{ project.id }}">{{ project.name }}</a></h3>
+          {% if project.membership_notes %}<p>{{ project.membership_notes }}</p>{% endif %}
+        </article>
+        {% else %}
+        <p class="subtle">This source is not assigned to a project yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="solid-panel">
+      <p class="eyebrow">Evidence graph</p>
+      <h2>Relationships involving this source</h2>
+      <div class="claim-list">
+        {% for relationship in relationships %}
+        <article class="claim-card">
+          <div class="source-card-topline">
+            <span class="pill">{{ relationship.relationship }}</span>
+            <span class="subtle">{{ relationship.strength }} strength</span>
+          </div>
+          <p class="claim-statement">{{ relationship.from_title or relationship.from_url }} → {{ relationship.to_title or relationship.to_url }}</p>
+          {% if relationship.note %}<p>{{ relationship.note }}</p>{% endif %}
+        </article>
+        {% else %}
+        <p class="subtle">No explicit source relationships involve this record yet. Relationships are recorded from a research project.</p>
+        {% endfor %}
+      </div>
+    </section>
   </div>
 
   <aside class="detail-sidebar">
@@ -135,14 +182,20 @@
     </section>
 
     <section class="solid-panel">
-      <p class="eyebrow">Citation helper</p>
-      <h2>Reusable citation</h2>
+      <p class="eyebrow">Citation helpers</p>
+      <h2>Portable citation data</h2>
       <label>Readable citation</label>
       <textarea readonly rows="6">{{ citation_markdown }}</textarea>
       <a class="button-link secondary" href="/sources/{{ source.id }}/citation?format=markdown">Open text citation</a>
       <label>BibTeX</label>
       <textarea readonly rows="9">{{ citation_bibtex }}</textarea>
       <a class="button-link secondary" href="/sources/{{ source.id }}/citation?format=bibtex">Open BibTeX</a>
+      <label>CSL JSON</label>
+      <textarea readonly rows="9">{{ citation_csl }}</textarea>
+      <a class="button-link secondary" href="/sources/{{ source.id }}/citation?format=csl-json">Open CSL JSON</a>
+      <label>RIS</label>
+      <textarea readonly rows="8">{{ citation_ris }}</textarea>
+      <a class="button-link secondary" href="/sources/{{ source.id }}/citation?format=ris">Open RIS</a>
     </section>
   </aside>
 </div>
