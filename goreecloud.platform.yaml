@@ -37,22 +37,26 @@ platform_systems:
     evidence:
     - SECURITY.md
     - docs/security-model.md
-    notes: Research context, project membership, saved searches, and relationship notes can be privacy-sensitive; no accepted Privacy Shield runtime/contract integration exists yet.
+    notes: Research context, project membership, saved searches, relationship notes, and recovery bundles can be privacy-sensitive; no accepted Privacy Shield runtime/contract integration exists yet.
   wardveil_security:
     result: applicable-blocked
     version: null
     evidence:
     - app/fetcher.py
+    - app/recovery.py
     - SECURITY.md
     - docs/security-model.md
-    notes: The application implements local ingestion safety controls, but Wardveil Security integration and acceptance remain outstanding.
+    notes: The application implements local ingestion and recovery safety controls, but Wardveil Security integration and acceptance remain outstanding.
   everkeep:
     result: applicable-migration-required
     version: null
     evidence:
     - app/db.py
+    - app/recovery.py
+    - tests/test_recovery.py
     - docs/deployment.md
-    notes: SQLite durability, schema migration records, and portable exports provide recovery primitives; Everkeep backup/restore integration and clean-environment restore acceptance are not complete.
+    - docs/recovery-bundle.md
+    notes: SQLite durability, schema migration records, portable exports, Recovery Bundle v1, and an automated clean-target schema-v2 restore drill now provide application-owned continuity evidence. Everkeep orchestration, protected backup custody/policy, operational target recovery acceptance, and broader Everkeep integration remain incomplete.
   glaze_ui:
     result: applicable-migration-required
     version: 1.1.0
@@ -84,12 +88,15 @@ continuity:
     required: true
     requirements:
     - Protect the SQLite research database and any future approved artifact store as durable user data.
-    - Keep research exports protected according to their sensitivity.
-    - Integrate Everkeep and validate backup evidence before production dependency.
+    - Use the application-owned Recovery Bundle v1 for verified schema-v2 Development backups where applicable rather than unsafe main-file-only copies of a live WAL database.
+    - Keep research exports and recovery bundles protected according to their sensitivity.
+    - Integrate Everkeep and validate operational backup evidence before production dependency.
   restore:
     required: true
     requirements:
-    - Validate a clean-environment restore of sources, snapshots, claims, projects, project memberships, saved searches, source relationships, search, and export before production acceptance.
+    - Preserve the clean-target no-overwrite recovery boundary for application-owned Recovery Bundle v1 restores.
+    - Retain automated clean-environment coverage for sources, snapshots, claims, projects, project memberships, saved searches, source relationships, search, and bundle verification.
+    - Complete Everkeep orchestration plus target-environment restore, recovery/rollback, retention/deletion, and operational acceptance before production dependency.
   export:
     required: true
     requirements:
@@ -99,6 +106,7 @@ continuity:
     required: true
     requirements:
     - Keep the core library usable with standard Python, SQLite, and documented open-source dependencies.
+    - Keep Recovery Bundle v1 application-owned and documented without making a proprietary backup service mandatory for basic local recovery.
     - Do not make a third-party hosted AI, citation, or research platform mandatory for core data access.
 external_dependencies:
 - name: FastAPI
@@ -117,7 +125,7 @@ external_dependencies:
   purpose: Server-rendered application UI templates.
   required: true
 - name: SQLite
-  purpose: Local-first durable source, snapshot, claim, project, relationship, saved-search, and search state.
+  purpose: Local-first durable source, snapshot, claim, project, relationship, saved-search, search, and Recovery Bundle v1 state handling.
   required: true
 compatibility:
   platform_contract: '0.2'
@@ -138,15 +146,18 @@ conformance:
   - SPECIFICATIONS.md
   - SECURITY.md
   - docs/security-model.md
+  - docs/recovery-bundle.md
   - app/main.py
   - app/fetcher.py
   - app/db.py
+  - app/recovery.py
+  - tests/test_recovery.py
   blockers:
   - GoreeCloud Research Library remains in Development and has no approved release or production acceptance.
   - GoreeCloud Identity integration is not implemented.
   - Wardveil Security integration and acceptance are not implemented.
   - Privacy Shield integration and acceptance are not implemented.
-  - Everkeep integration and clean-environment restore acceptance remain incomplete.
+  - Everkeep orchestration, protected backup custody/policy, target-environment recovery acceptance, and broader continuity acceptance remain incomplete even though Recovery Bundle v1 and automated clean-target recovery evidence now exist.
   - GoreeCloud Mesh integration is not implemented.
   - GoreeCloud Manager integration is not implemented.
   - Formal Glaze UI contract, rendered, accessibility, and downstream acceptance evidence remains outstanding.
