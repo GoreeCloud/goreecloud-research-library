@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Research Library · GoreeCloud{% endblock %}
+{% block content %}
+<section class="hero-panel">
+  <div>
+    <p class="eyebrow">Capture evidence, not just bookmarks</p>
+    <h1>Research from public web sources in one traceable library.</h1>
+    <p class="hero-copy">Paste a URL to collect readable text, source metadata, access time, content hash, and a preserved extracted-text snapshot. Classify evidence, record claims, search it later, and export the library without a hosted dependency.</p>
+  </div>
+  <form class="capture-form" action="/capture" method="post">
+    <label for="url">Source URL</label>
+    <div class="capture-row">
+      <input id="url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.org/research-source" required>
+      <button type="submit">Capture source</button>
+    </div>
+    <small>Public HTTP(S) only by default. Private/local addresses, embedded credentials, unsupported media, and robots-disallowed fetches are blocked.</small>
+  </form>
+</section>
+
+{% if error %}
+<div class="notice error" role="alert">{{ error }}</div>
+{% endif %}
+
+<section class="toolbar" aria-label="Research library filters">
+  <form method="get" action="/" class="search-form">
+    <label class="sr-only" for="q">Search sources</label>
+    <input id="q" name="q" value="{{ q }}" placeholder="Search title, text, author, publisher, tags…">
+    <label class="sr-only" for="classification">Source classification</label>
+    <select id="classification" name="classification">
+      <option value="">All source classes</option>
+      {% for value in source_classifications %}
+      <option value="{{ value }}" {% if classification == value %}selected{% endif %}>{{ value.replace('-', ' ')|title }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="secondary">Search</button>
+  </form>
+  <div class="result-count">{{ sources|length }} source{% if sources|length != 1 %}s{% endif %}</div>
+</section>
+
+<section class="source-grid" aria-label="Captured sources">
+  {% for source in sources %}
+  <article class="source-card">
+    <div class="source-card-topline">
+      <span class="pill">{{ source.source_type|upper }}</span>
+      <span class="subtle">{{ source.accessed_at[:10] }}</span>
+    </div>
+    <h2><a href="/sources/{{ source.id }}">{{ source.title or source.url }}</a></h2>
+    <p class="source-domain">{{ source.publisher or source.url }}</p>
+    <p>{{ source.excerpt or 'No extractable text was found for this source.' }}</p>
+    <div class="source-meta-row">
+      <span>{{ source.source_classification.replace('-', ' ') }}</span>
+      <span>{{ source.evidence_status.replace('-', ' ') }}</span>
+    </div>
+    {% if source.tags %}<p class="tags">{{ source.tags }}</p>{% endif %}
+  </article>
+  {% else %}
+  <div class="empty-state">
+    <h2>Your research library is ready.</h2>
+    <p>Paste a public article, documentation page, plain-text resource, or PDF above to create the first source record.</p>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

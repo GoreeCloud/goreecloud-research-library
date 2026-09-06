@@ -1,0 +1,154 @@
+schema_version: '0.2'
+component:
+  type: application
+  id: goreecloud-research-library
+  product_name: GoreeCloud Research Library
+  repository: GoreeCloud/goreecloud-research-library
+lifecycle: development
+version: 0.1.0-dev
+supported_platforms:
+- web
+- linux
+api:
+  versions:
+  - v1-development
+  endpoints:
+  - name: health
+    url: /healthz
+    purpose: Process and local-database initialization signal; not a production-readiness verdict.
+  - name: capture
+    url: /api/v1/capture
+    purpose: Development API for capturing one public research source URL.
+  - name: sources
+    url: /api/v1/sources
+    purpose: Development read API for the local research source library.
+platform_systems:
+  manager:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: Manager discovery, launch, and sanitized application-status integration are future work and are not claimed by the MVP.
+  privacy_shield:
+    result: applicable-blocked
+    version: null
+    evidence:
+    - SECURITY.md
+    - docs/security-model.md
+    notes: Research context is privacy-sensitive; no accepted Privacy Shield runtime/contract integration exists yet.
+  wardveil_security:
+    result: applicable-blocked
+    version: null
+    evidence:
+    - app/fetcher.py
+    - SECURITY.md
+    - docs/security-model.md
+    notes: The MVP implements application-owned ingestion safety controls, but Wardveil Security integration and acceptance remain outstanding.
+  everkeep:
+    result: applicable-migration-required
+    version: null
+    evidence:
+    - app/db.py
+    - docs/deployment.md
+    notes: SQLite durability plus JSON/CSV export provide initial recovery primitives; Everkeep backup/restore integration and clean-environment restore acceptance are not complete.
+  glaze_ui:
+    result: applicable-migration-required
+    version: 1.1.0
+    evidence:
+    - app/static/app.css
+    - BRANDING.md
+    notes: The Development UI aligns with Stable Glaze UI 1.1 principles, but formal contract, rendered, accessibility, and downstream acceptance evidence has not been established.
+  mesh:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: Research capability registration, relationships, events, and cross-application discovery are planned and not implemented.
+    capabilities: []
+    dependencies: []
+    published_events: []
+    consumed_events: []
+  identity:
+    result: applicable-blocked
+    version: null
+    evidence:
+    - README.md
+    - SECURITY.md
+    notes: The MVP has no authentication. GoreeCloud Identity is required before multi-user or Internet-facing authenticated use.
+health:
+  health_endpoint: /healthz
+  readiness_endpoint: null
+continuity:
+  backup:
+    required: true
+    requirements:
+    - Protect the SQLite research database and any future approved artifact store as durable user data.
+    - Keep research exports protected according to their sensitivity.
+    - Integrate Everkeep and validate backup evidence before production dependency.
+  restore:
+    required: true
+    requirements:
+    - Validate a clean-environment restore of sources, snapshots, claims, search, and export before production acceptance.
+  export:
+    required: true
+    requirements:
+    - Preserve machine-readable JSON export without a proprietary hosted dependency.
+    - Preserve a source-level CSV export for ordinary portability.
+  portability:
+    required: true
+    requirements:
+    - Keep the core library usable with standard Python, SQLite, and documented open-source dependencies.
+    - Do not make a third-party hosted AI, citation, or research platform mandatory for core data access.
+external_dependencies:
+- name: FastAPI
+  purpose: HTTP application and development API framework.
+  required: true
+- name: HTTPX
+  purpose: Bounded public HTTP(S) source retrieval.
+  required: true
+- name: Beautiful Soup
+  purpose: HTML parsing foundation used by GoreeCloud-owned extraction logic.
+  required: true
+- name: pypdf
+  purpose: PDF text and metadata parsing foundation.
+  required: true
+- name: Jinja2
+  purpose: Server-rendered application UI templates.
+  required: true
+- name: SQLite
+  purpose: Local-first durable source, snapshot, claim, and search state.
+  required: true
+compatibility:
+  platform_contract: '0.2'
+  glaze_ui_required: 1.1.0
+  requires:
+  - goreecloud-platform-contract==0.2
+  - glaze-ui==1.1.0
+  provides:
+  - goreecloud-research-library-api-v1-development
+evidence:
+  acceptance_tests:
+  - tests/test_fetcher.py
+  - tests/test_extractors.py
+  - tests/test_db.py
+  - tests/test_citations.py
+  release: []
+conformance:
+  status: nonconformant
+  validated_at: null
+  evidence:
+  - README.md
+  - SPECIFICATIONS.md
+  - SECURITY.md
+  - docs/security-model.md
+  - app/main.py
+  - app/fetcher.py
+  - app/db.py
+  blockers:
+  - GoreeCloud Research Library remains in Development and has no approved release or production acceptance.
+  - GoreeCloud Identity integration is not implemented.
+  - Wardveil Security integration and acceptance are not implemented.
+  - Privacy Shield integration and acceptance are not implemented.
+  - Everkeep integration and clean-environment restore acceptance remain incomplete.
+  - GoreeCloud Mesh integration is not implemented.
+  - GoreeCloud Manager integration is not implemented.
+  - Formal Glaze UI contract, rendered, accessibility, and downstream acceptance evidence remains outstanding.
+  - Network egress hardening, abuse controls, and hostile-content parser acceptance remain outstanding for Internet-facing use.

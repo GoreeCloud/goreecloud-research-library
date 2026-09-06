@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible GoreeCloud Research Library defect
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, private research content, or sensitive exploit material in a public issue. Use an approved private security channel for sensitive vulnerabilities.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Give the smallest safe set of steps needed to reproduce the problem.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.1.0-dev or commit SHA
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python/container version, OS, browser, and relevant non-secret configuration.
