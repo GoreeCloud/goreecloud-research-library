@@ -5,7 +5,7 @@ component:
   product_name: GoreeCloud Research Library
   repository: GoreeCloud/goreecloud-research-library
 lifecycle: development
-version: 0.1.0-dev
+version: 0.2.0-dev
 supported_platforms:
 - web
 - linux
@@ -22,19 +22,22 @@ api:
   - name: sources
     url: /api/v1/sources
     purpose: Development read API for the local research source library.
+  - name: projects
+    url: /api/v1/projects
+    purpose: Development read API for research projects, memberships, and source relationships.
 platform_systems:
   manager:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: Manager discovery, launch, and sanitized application-status integration are future work and are not claimed by the MVP.
+    notes: Manager discovery, launch, and sanitized application-status integration are future work and are not claimed by the Development implementation.
   privacy_shield:
     result: applicable-blocked
     version: null
     evidence:
     - SECURITY.md
     - docs/security-model.md
-    notes: Research context is privacy-sensitive; no accepted Privacy Shield runtime/contract integration exists yet.
+    notes: Research context, project membership, saved searches, and relationship notes can be privacy-sensitive; no accepted Privacy Shield runtime/contract integration exists yet.
   wardveil_security:
     result: applicable-blocked
     version: null
@@ -42,21 +45,21 @@ platform_systems:
     - app/fetcher.py
     - SECURITY.md
     - docs/security-model.md
-    notes: The MVP implements application-owned ingestion safety controls, but Wardveil Security integration and acceptance remain outstanding.
+    notes: The application implements local ingestion safety controls, but Wardveil Security integration and acceptance remain outstanding.
   everkeep:
     result: applicable-migration-required
     version: null
     evidence:
     - app/db.py
     - docs/deployment.md
-    notes: SQLite durability plus JSON/CSV export provide initial recovery primitives; Everkeep backup/restore integration and clean-environment restore acceptance are not complete.
+    notes: SQLite durability, schema migration records, and portable exports provide recovery primitives; Everkeep backup/restore integration and clean-environment restore acceptance are not complete.
   glaze_ui:
     result: applicable-migration-required
     version: 1.1.0
     evidence:
     - app/static/app.css
     - BRANDING.md
-    notes: The Development UI aligns with Stable Glaze UI 1.1 principles, but formal contract, rendered, accessibility, and downstream acceptance evidence has not been established.
+    notes: The Development UI aligns with current Stable Glaze UI 1.1 principles, but formal contract, rendered, accessibility, and downstream acceptance evidence has not been established.
   mesh:
     result: applicable-blocked
     version: null
@@ -72,7 +75,7 @@ platform_systems:
     evidence:
     - README.md
     - SECURITY.md
-    notes: The MVP has no authentication. GoreeCloud Identity is required before multi-user or Internet-facing authenticated use.
+    notes: The Development application has no authentication. GoreeCloud Identity is required before multi-user or Internet-facing authenticated use.
 health:
   health_endpoint: /healthz
   readiness_endpoint: null
@@ -86,12 +89,12 @@ continuity:
   restore:
     required: true
     requirements:
-    - Validate a clean-environment restore of sources, snapshots, claims, search, and export before production acceptance.
+    - Validate a clean-environment restore of sources, snapshots, claims, projects, project memberships, saved searches, source relationships, search, and export before production acceptance.
   export:
     required: true
     requirements:
     - Preserve machine-readable JSON export without a proprietary hosted dependency.
-    - Preserve a source-level CSV export for ordinary portability.
+    - Preserve source-level CSV plus CSL JSON and RIS citation portability.
   portability:
     required: true
     requirements:
@@ -114,7 +117,7 @@ external_dependencies:
   purpose: Server-rendered application UI templates.
   required: true
 - name: SQLite
-  purpose: Local-first durable source, snapshot, claim, and search state.
+  purpose: Local-first durable source, snapshot, claim, project, relationship, saved-search, and search state.
   required: true
 compatibility:
   platform_contract: '0.2'
