@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · Research Library{% endblock %}
+{% block content %}
+<a class="back-link" href="/projects">← Back to projects</a>
+<section class="detail-header">
+  <div>
+    <div class="source-card-topline">
+      <span class="pill">{{ project.status|upper }}</span>
+      <span class="pill neutral">{{ project.source_count }} sources</span>
+    </div>
+    <h1>{{ project.name }}</h1>
+    {% if project.question %}<p class="claim-statement">{{ project.question }}</p>{% endif %}
+    {% if project.description %}<p>{{ project.description }}</p>{% endif %}
+    {% if project.tags %}<p class="tags">{{ project.tags }}</p>{% endif %}
+  </div>
+</section>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <section class="solid-panel" id="sources">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Project evidence set</p>
+          <h2>Sources</h2>
+        </div>
+      </div>
+      <form action="/projects/{{ project.id }}/sources" method="post" class="stack-form">
+        <label for="source-id">Add a captured source</label>
+        <select id="source-id" name="source_id" required>
+          <option value="">Choose a source</option>
+          {% for source in all_sources %}
+          <option value="{{ source.id }}">{{ source.title or source.url }}</option>
+          {% endfor %}
+        </select>
+        <label for="membership-notes">Project-specific note</label>
+        <input id="membership-notes" name="notes" placeholder="Why this source belongs in this project">
+        <button type="submit">Add source to project</button>
+      </form>
+
+      <div class="claim-list">
+        {% for source in sources %}
+        <article class="claim-card">
+          <div class="source-card-topline">
+            <span class="pill">{{ source.source_classification.replace('-', ' ') }}</span>
+            <span class="subtle">{{ source.evidence_status.replace('-', ' ') }}</span>
+          </div>
+          <h3><a href="/sources/{{ source.id }}">{{ source.title or source.url }}</a></h3>
+          {% if source.project_notes %}<p>{{ source.project_notes }}</p>{% endif %}
+          <form action="/projects/{{ project.id }}/sources/{{ source.id }}/remove" method="post">
+            <button type="submit" class="secondary">Remove from project</button>
+          </form>
+        </article>
+        {% else %}
+        <p class="subtle">No sources are assigned to this project yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="solid-panel" id="relationships">
+      <p class="eyebrow">Evidence graph</p>
+      <h2>Source relationships</h2>
+      <p>Record an explicit relationship only when the research supports it. A relationship is researcher-authored evidence metadata, not an automatic truth claim.</p>
+      {% if sources|length >= 2 %}
+      <form action="/projects/{{ project.id }}/relationships" method="post" class="stack-form">
+        <div class="form-grid two">
+          <div>
+            <label for="from-source">From source</label>
+            <select id="from-source" name="from_source_id" required>
+              {% for source in sources %}<option value="{{ source.id }}">{{ source.title or source.url }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="to-source">To source</label>
+            <select id="to-source" name="to_source_id" required>
+              {% for source in sources %}<option value="{{ source.id }}">{{ source.title or source.url }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label for="relationship">Relationship</label>
+            <select id="relationship" name="relationship">
+              {% for value in relationship_types %}<option value="{{ value }}">{{ value|title }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="strength">Strength</label>
+            <select id="strength" name="strength">
+              {% for value in relationship_strengths %}<option value="{{ value }}">{{ value|title }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <label for="relationship-note">Evidence note / limitation</label>
+        <textarea id="relationship-note" name="note" rows="3" placeholder="What passages, observations, scope differences, or limitations justify this relationship?"></textarea>
+        <button type="submit">Record relationship</button>
+      </form>
+      {% else %}
+      <p class="subtle">Add at least two sources before recording source-to-source relationships.</p>
+      {% endif %}
+
+      <div class="claim-list">
+        {% for relationship in relationships %}
+        <article class="claim-card">
+          <div class="source-card-topline">
+            <span class="pill">{{ relationship.relationship }}</span>
+            <span class="subtle">{{ relationship.strength }} strength</span>
+          </div>
+          <p class="claim-statement">{{ relationship.from_title or ('Source ' ~ relationship.from_source_id) }} → {{ relationship.to_title or ('Source ' ~ relationship.to_source_id) }}</p>
+          {% if relationship.note %}<p>{{ relationship.note }}</p>{% endif %}
+        </article>
+        {% else %}
+        <p class="subtle">No source relationships recorded yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="detail-sidebar">
+    <section class="solid-panel">
+      <p class="eyebrow">Triangulation view</p>
+      <h2>Relationship summary</h2>
+      <dl class="facts">
+        {% for kind, count in relationship_summary.items() %}
+        <div><dt>{{ kind|title }}</dt><dd>{{ count }}</dd></div>
+        {% endfor %}
+      </dl>
+      {% if relationship_summary.contradicts > 0 %}
+      <div class="notice error" role="status">This project contains explicit contradiction relationships. Review the affected sources before treating the disputed point as verified.</div>
+      {% endif %}
+    </section>
+
+    <section class="solid-panel">
+      <p class="eyebrow">Research discipline</p>
+      <h2>Interpretation rules</h2>
+      <p class="subtle">“Supports” means one source provides corroborating evidence for another source or proposition. “Contradicts” records material conflict. “Updates” indicates later information. “Duplicates” flags substantially redundant evidence. “References” records an explicit citation or dependency. “Contextualizes” adds scope or interpretation without necessarily confirming the claim.</p>
+    </section>
+  </aside>
+</div>
+{% endblock %}
