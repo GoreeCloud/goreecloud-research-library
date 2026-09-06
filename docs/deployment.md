@@ -39,26 +39,52 @@ No reusable secret is required by the current Development application.
 
 ## Backup
 
-For a stopped local instance, copy the SQLite database and preserve file integrity. For a live instance using WAL mode, prefer an SQLite-aware backup method or stop writes before filesystem copying so the database, WAL, and shared-memory state are handled correctly.
+For an important Development library, prefer the application-owned Recovery Bundle v1 instead of copying only the live SQLite main database file:
+
+```bash
+python -m app.recovery backup --output /protected/path/research-library-backup
+```
+
+The backup command uses SQLite's backup API, which produces a consistent snapshot of the WAL-mode database. The new output directory contains `research-library.sqlite3` and a strict `manifest.json` binding schema version, SHA-256, byte size, and durable table row counts. Creation fails if the destination already exists or path safety checks fail.
+
+Verify a bundle independently before relying on it:
+
+```bash
+python -m app.recovery verify --bundle /protected/path/research-library-backup
+```
+
+Verification also requires SQLite integrity and foreign-key checks to pass and the complete schema-v2 durable table set to be present.
+
+A stopped-instance SQLite-aware copy remains a valid low-level operator technique when performed correctly, but a filesystem copy of only the live main SQLite file is unsafe because WAL state may be omitted.
 
 JSON export is an additional portability/recovery artifact, not a complete replacement for database backup because it does not preserve every future schema detail by definition. CSL JSON/RIS/CSV exports are specialized portability formats and are not database backups.
 
-Before upgrading an important library, preserve a database backup plus a current JSON export.
+Before upgrading an important library, preserve a verified recovery bundle plus a current JSON export.
 
 ## Restore
 
-Development restore procedure:
+Recovery Bundle v1 restores only into a database path that does not already exist:
 
-1. stop the application;
-2. provision the same or a compatible application version;
-3. place the protected SQLite database at the configured data path;
-4. start the application;
-5. confirm `/healthz` reports `status: ok` and the expected schema version;
-6. open representative source records and searches;
-7. verify snapshots, claims, projects, project source memberships, saved searches, and source relationships;
-8. verify JSON and citation export behavior.
+```bash
+python -m app.recovery restore \
+  --bundle /protected/path/research-library-backup \
+  --target-database /clean/path/research-library.sqlite3
+```
 
-A formal Everkeep-managed clean-environment restore test is still required before production/Stable acceptance.
+The command verifies the source bundle before copying, writes a private temporary database in the target directory, re-verifies the temporary copy, publishes it with a same-filesystem no-overwrite hard link, and verifies the published target again. Existing targets and symbolic-link path components fail closed.
+
+After restore:
+
+1. configure the application to use the restored database path;
+2. start the same or a compatible application version;
+3. confirm `/healthz` reports `status: ok` and schema version 2;
+4. open representative source records and searches;
+5. verify snapshots, claims, projects, project source memberships, saved searches, and source relationships;
+6. verify JSON and citation export behavior.
+
+`tests/test_recovery.py` performs an automated clean-target round trip with representative schema-v2 state and verifies restored search behavior. This establishes Development evidence for the application-owned recovery primitive only. Formal Everkeep orchestration, protected backup custody, target-host recovery acceptance, retention/deletion policy, disaster recovery, and production/Stable acceptance remain open.
+
+See `docs/recovery-bundle.md` for the complete format and safety contract.
 
 ## Upgrade and schema migrations
 
@@ -71,16 +97,16 @@ Migration 2 is additive: it does not intentionally delete source/snapshot/claim 
 
 For an important database:
 
-1. stop writes or stop the application;
-2. make a protected SQLite-aware backup;
+1. stop writes or use Recovery Bundle v1 to take a verified SQLite snapshot;
+2. preserve the verified recovery bundle in protected storage;
 3. preserve a JSON export;
 4. start the new application version and allow the declared migration to apply;
 5. confirm `/healthz` reports `schema_version: 2`;
 6. validate representative existing sources/snapshots/claims plus new project/search functions;
-7. retain the pre-upgrade backup until rollback/recovery confidence is established.
+7. retain the pre-upgrade recovery bundle until rollback/recovery confidence is established.
 
 Future incompatible schema changes must define governed forward migration, backup, rollback/recovery behavior, and tests before acceptance rather than relying on ad hoc database edits.
 
 ## Uninstall / retirement
 
-Stop the process/container and preserve or deliberately export/delete the data volume according to the user's retention decision. Do not remove a research database that is the only remaining copy of important evidence.
+Stop the process/container and preserve or deliberately export/delete the data volume and recovery bundles according to the user's retention decision. Do not remove a research database or recovery bundle that is the only remaining copy of important evidence.
