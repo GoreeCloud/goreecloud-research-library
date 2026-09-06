@@ -29,6 +29,10 @@ Status legend: **Implemented**, **Partial**, **Planned**, or **Not approved/impl
 | RIS citation portability | Implemented, Development | source-level and library export |
 | JSON export | Implemented | export v2 contains sources, claims, snapshots, projects, memberships, relationships, and saved searches |
 | CSV export | Implemented | source-level export |
+| Recovery Bundle v1 creation | Implemented, Development | `app/recovery.py` uses SQLite backup API and emits strict schema-v2 integrity manifest; local primitive only |
+| Recovery Bundle v1 verification | Implemented, Development | SHA-256/size/schema/table-count checks plus SQLite integrity/foreign-key checks and symlink rejection |
+| Clean-target recovery drill | Implemented, Development | `tests/test_recovery.py` verifies representative schema-v2 state round trip and restored search; not Everkeep/platform/production acceptance |
+| Existing-database replacement/rollback orchestration | Planned | clean-target restore deliberately refuses overwrite; governed migration/rollback workflow remains separate |
 | Health endpoint | Implemented | `/healthz`, includes schema version and FTS state |
 | Server-rendered responsive UI | Implemented | Development UI |
 | Development source/project API | Implemented | `/api/v1/sources`, `/api/v1/projects`, capture endpoint |
@@ -37,7 +41,7 @@ Status legend: **Implemented**, **Partial**, **Planned**, or **Not approved/impl
 | GoreeCloud Identity | Planned | required before multi-user/public authenticated deployment |
 | Privacy Shield | Planned | privacy contract integration pending |
 | Wardveil Security | Planned | security contract integration pending |
-| Everkeep | Partial | portable data and migration records exist; contract integration and clean restore acceptance pending |
+| Everkeep | Partial | local recovery bundle, portable data, migration records, and automated clean-target drill exist; Everkeep orchestration/policy/operational acceptance remain pending |
 | GoreeCloud Mesh | Planned | no capability/event integration yet |
 | GoreeCloud Manager | Planned | no Manager visibility/launch integration yet |
 | Browser-rendered dynamic-page capture | Planned | current fetcher does not execute page JavaScript |
